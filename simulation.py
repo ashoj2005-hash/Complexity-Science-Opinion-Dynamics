@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import random
 from collections import Counter
 
-# --- MACRO PARAMETERS ---
-GRID_SIZE = 100          # 10,000 students
+# System Parameters
+GRID_SIZE = 100          
 STEPS = 300000           
 APATHY_START_RATIO = 0.05 
 CANDIDATE_A_RATIO = 0.475 
@@ -21,18 +21,18 @@ def run_simulation():
     
     current_avalanche = 0
     quiet_steps = 0        
-    NEWS_CYCLE_LIMIT = 15  # REDUCED: Stops avalanches from artificially gluing together
+    NEWS_CYCLE_LIMIT = 15  # Inactivity threshold to terminate a cascade
     
     plt.ion()
     fig, ax = plt.subplots()
     img = ax.imshow(grid, cmap='coolwarm', vmin=-1, vmax=1)
-    plt.title("Campus Avalanche: The Goldilocks State")
+    plt.title("Opinion Dynamics: Avalanche Simulation")
     
     for step in range(STEPS):
         x, y = random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1)
         current_state = grid[x, y]
         
-        # 8 Neighbors (Moore Neighborhood)
+        # Moore neighborhood evaluation
         neighbors = [
             grid[(x + 1) % GRID_SIZE, y], grid[(x - 1) % GRID_SIZE, y],
             grid[x, (y + 1) % GRID_SIZE], grid[x, (y - 1) % GRID_SIZE],
@@ -46,7 +46,7 @@ def run_simulation():
         count_B = neighbors.count(-1)
         changed = False
         
-        # Social Thresholds 
+        # State transition rules
         if current_state == 0:
             if count_A >= 3:
                 grid[x, y] = 1
@@ -71,7 +71,7 @@ def run_simulation():
                  grid[x, y] = 0
                  changed = True
 
-        # Tracking Logic
+        # Avalanche tracking
         if changed:
             current_avalanche += 1
             quiet_steps = 0 
@@ -94,19 +94,19 @@ def run_simulation():
         
     return avalanche_sizes
 
-print(f"Running simulation for {STEPS} steps... Please wait.")
+print(f"Initializing simulation ({STEPS} steps)...")
 avalanches = run_simulation()
 
-print(f"Total avalanches recorded: {len(avalanches)}")
+print(f"Simulation complete. Total avalanches recorded: {len(avalanches)}")
 
-# --- PLOTTING WITH NOISE FILTER ---
+# Data processing and visualization
 if len(avalanches) > 0:
     counts = Counter(avalanches)
     
     clean_sizes = []
     clean_freqs = []
     
-    # THE FIX: Only plot data points that happened more than once to remove the noise
+    # Filter finite-size noise (single occurrences)
     for size, freq in counts.items():
         if freq > 1:
             clean_sizes.append(size)
@@ -116,14 +116,14 @@ if len(avalanches) > 0:
     plt.scatter(clean_sizes, clean_freqs, color='black', marker='.')
     plt.xscale('log')
     plt.yscale('log')
-    plt.title('Filtered Opinion Avalanche Distribution (Log-Log)')
-    plt.xlabel('Avalanche Size (Number of Students Flipped)')
+    plt.title('Filtered Opinion Avalanche Distribution')
+    plt.xlabel('Avalanche Size (Number of Flipped States)')
     plt.ylabel('Frequency P(s)')
     plt.grid(True, which="both", ls="--", alpha=0.5)
     
     plt.savefig('avalanche_plot_clean.png', dpi=300, bbox_inches='tight')
-    print("Beautiful, clean graph saved as 'avalanche_plot_clean.png'")
+    print("Output saved to 'avalanche_plot_clean.png'")
     
     plt.show()
 else:
-    print("No avalanches occurred.")
+    print("No avalanches recorded.")
